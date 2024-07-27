@@ -1,4 +1,4 @@
-gender,race/ethnicity,parental level of education,lunch,math score,reading score,writing score,final test
+gender,race/ethnicity,parental level of education,lunch,math score,reading score,writing score,studying
 female,group B,bachelor's degree,standard,72,72,74,0
 female,group C,some college,standard,69,90,88,1
 female,group B,master's degree,standard,90,95,93,0
