@@ -1,6 +1,6 @@
-## Predicción de Abandono Estudiantil con Regresión Logística
-### Descripción del Proyecto
-Este proyecto utiliza técnicas de aprendizaje automático para predecir si un estudiante abandonará su carrera antes de completarla. A través de un modelo de Regresión Logística, se busca identificar patrones en la información disponible.
+## Prediction of Student Dropout with Logistic Regression
+### Project description
+This project uses machine learning techniques to predict whether a student will drop out of their degree before completing it. Through a Logistic Regression model, we seek to identify patterns in the available information.
 
-### Objetivo
-El objetivo principal es desarrollar un modelo que, dada una serie de características del estudiante (como rendimiento académico, nivel educacional de los padres, etc.), permita predecir de manera efectiva si el estudiante tiene probabilidades de abandonar su carrera. Con esta información, las instituciones educativas podrán intervenir y ofrecer el apoyo necesario.
+### Objective 
+The main objective is to develop a model that, given a series of student characteristics (such as academic performance, parental educational level, etc.), allows to effectively predict whether the student is at risk of abandoning his or her career. With this information, educational institutions will be able to intervene and offer the necessary support.
