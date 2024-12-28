@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd  
 from sklearn.model_selection import train_test_split  
 from sklearn.linear_model import LogisticRegression  
-from sklearn.metrics import confusion_matrix, classification_report, roc_auc_score  
+from sklearn.metrics import confusion_matrix, classification_report, roc_auc_score, roc_curve  
 import seaborn as sns  
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import OrdinalEncoder
@@ -101,7 +101,20 @@ elif option == "ROC Accuracy":
     st.header("ROC Accuracy")
     y_pred_proba = model.predict_proba(X_test)[:, 1]
     auc = roc_auc_score(y_test, y_pred_proba)
-    st.write(auc)
+    st.write(f'AUC: {auc}')
+    
+    # Calcular la curva ROC y el valor AUC
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
+    
+    # Graficar la curva ROC
+    fig, ax = plt.subplots()
+    ax.plot(fpr, tpr, label=f'AUC = {auc:.2f}')
+    ax.plot([0, 1], [0, 1], 'k--')
+    ax.set_xlabel('False Positive Rate')
+    ax.set_ylabel('True Positive Rate')
+    ax.set_title('ROC Curve')
+    ax.legend(loc='lower right')
+    st.pyplot(fig)
 
 elif option == "Predict":
     st.header("Predict for a student")
