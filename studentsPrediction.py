@@ -9,15 +9,17 @@ from sklearn.preprocessing import OrdinalEncoder
 from imblearn.under_sampling import RandomUnderSampler  
 from imblearn.over_sampling import SMOTE  
 
+# Configuración de la página de Streamlit
 st.set_page_config(
     page_title="Logistic Regression",
-    layout="wide", #centered
+    layout="wide", # También se puede usar "centered"
     initial_sidebar_state="expanded",
 )
-# Título de la página
-st.title("Logistic Regression Model for stundents performance")
 
-# Función para predecir si el estudiante seguirá en la carrera o no
+# Título de la página
+st.title("Logistic Regression Model for Students Performance")
+
+# Función para predecir si el estudiante ha completado el curso de preparación para exámenes
 def predict_student(gender, race, parental_education, lunch, math_score, reading_score, writing_score):
     aux = pd.read_csv('StudentsPerformance.csv')
     aux = pd.concat([aux, pd.DataFrame({
@@ -28,63 +30,51 @@ def predict_student(gender, race, parental_education, lunch, math_score, reading
         'math score': [math_score],
         'reading score': [reading_score],
         'writing score': [writing_score],
-        'studying': [0]
+        'test preparation course': [0]
     })])
 
-    # codificar numericamente las columnas Object
+    # Codificar numéricamente las columnas Object
     encoder = OrdinalEncoder()
-
     columns_to_encode = ['gender', 'race/ethnicity', 'parental level of education', 'lunch']
-
     encoder.fit(aux[columns_to_encode])
-
     aux[columns_to_encode] = encoder.transform(aux[columns_to_encode])
 
-    student = aux.iloc[1000]
-    student = student.drop('studying')  
-    
-    X_student = pd.DataFrame([student])  
-    
+    # Seleccionar el nuevo estudiante agregado
+    student = aux.iloc[-1]
+    student = student.drop('test preparation course')
+    X_student = pd.DataFrame([student])
+
+    # Realizar la predicción
     prediction = model.predict(X_student)
-    
     return prediction[0]
 
-
-############################## Cargando el Dataset
+# Cargar el Dataset
 data = pd.read_csv('StudentsPerformance.csv')
 
-# codificar numericamente las columnas object
+# Codificar numéricamente las columnas object
 encoder = OrdinalEncoder()
-
 columns_to_encode = ['gender', 'race/ethnicity', 'parental level of education', 'lunch']
-
 encoder.fit(data[columns_to_encode])
-
 data[columns_to_encode] = encoder.transform(data[columns_to_encode])
 
 # Dividir datos en entrenamiento y prueba  
 X = data[['gender', 'race/ethnicity', 'parental level of education', 'lunch', 'math score', 'reading score', 'writing score']]
-y = data[['studying']]
+y = data['test preparation course']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# Balancear los datos con Smote
-smote = SMOTE(random_state=42)  
-X_resampled, y_resampled = smote.fit_resample(X_train, y_train) # type: ignore
+# Balancear los datos con SMOTE
+smote = SMOTE(random_state=42)
+X_resampled, y_resampled = smote.fit_resample(X_train, y_train)  # type: ignore
 
-# Aplicar RandomUnderSampler  
-undersampler = RandomUnderSampler(random_state=42)  
-X_resampled, y_resampled = undersampler.fit_resample(X_train, y_train)   # type: ignore
-
-# Inicializar y entrenar el modelo de regresión logística  
-model = LogisticRegression()  
+# Inicializar y entrenar el modelo de regresión logística
+model = LogisticRegression()
 model.fit(X_resampled, y_resampled)
 
 # Predicción
 y_pred = model.predict(X_test)
 
-
-############################## Opciones de la interfaz
+# Opciones de la interfaz
 option = st.sidebar.selectbox("Select an option", ("Data preview", "Data summary", "Confusion matrix", "Classification Report", "ROC Accuracy", "Predict"))
 
 if option == "Data preview":
@@ -96,7 +86,6 @@ elif option == "Data summary":
 elif option == "Confusion matrix":
     st.header("Confusion matrix")
     cm = confusion_matrix(y_test, y_pred)
-    
     fig, ax = plt.subplots()
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
     ax.set_xlabel('Predicted')
@@ -129,6 +118,6 @@ elif option == "Predict":
     if st.button("Predict"):
         prediction = predict_student(gender, race, parental_education, lunch, math_score, reading_score, writing_score)
         if prediction == 1:
-            st.success("The student will continue in the career")
+            st.success("The student has completed the test preparation course")
         else:
-            st.error("The student will drop out of college")
+            st.error("The student has not completed the test preparation course")
