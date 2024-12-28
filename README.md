@@ -7,7 +7,6 @@ The main objective is to develop a model that, given a series of student charact
 
 #### Files:
 - StudentsPerformance.csv (Dataset used to train the model)
-- model.ipynb (the model in a notebook without some data processing)
 - model_with_smote.ipynb (the model in a notebook using Smote for data processing)
 - studentsPrediction.py (the interface using Streamlit)
 

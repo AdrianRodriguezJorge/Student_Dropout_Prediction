@@ -20,13 +20,12 @@ st.set_page_config(
 st.title("Logistic Regression Model for Students Performance")
 
 # Función para predecir si el estudiante ha completado el curso de preparación para exámenes
-def predict_student(gender, race, parental_education, lunch, math_score, reading_score, writing_score):
+def predict_student(gender, race, parental_education, math_score, reading_score, writing_score):
     aux = pd.read_csv('StudentsPerformance.csv')
     aux = pd.concat([aux, pd.DataFrame({
         'gender': [gender],
         'race/ethnicity': [race],
         'parental level of education': [parental_education],
-        'lunch': [lunch],
         'math score': [math_score],
         'reading score': [reading_score],
         'writing score': [writing_score],
@@ -35,7 +34,7 @@ def predict_student(gender, race, parental_education, lunch, math_score, reading
 
     # Codificar numéricamente las columnas Object
     encoder = OrdinalEncoder()
-    columns_to_encode = ['gender', 'race/ethnicity', 'parental level of education', 'lunch']
+    columns_to_encode = ['gender', 'race/ethnicity', 'parental level of education']
     encoder.fit(aux[columns_to_encode])
     aux[columns_to_encode] = encoder.transform(aux[columns_to_encode])
 
@@ -50,15 +49,16 @@ def predict_student(gender, race, parental_education, lunch, math_score, reading
 
 # Cargar el Dataset
 data = pd.read_csv('StudentsPerformance.csv')
+data = data.drop('lunch', axis=1) 
 
 # Codificar numéricamente las columnas object
 encoder = OrdinalEncoder()
-columns_to_encode = ['gender', 'race/ethnicity', 'parental level of education', 'lunch']
+columns_to_encode = ['gender', 'race/ethnicity', 'parental level of education']
 encoder.fit(data[columns_to_encode])
 data[columns_to_encode] = encoder.transform(data[columns_to_encode])
 
 # Dividir datos en entrenamiento y prueba  
-X = data[['gender', 'race/ethnicity', 'parental level of education', 'lunch', 'math score', 'reading score', 'writing score']]
+X = data[['gender', 'race/ethnicity', 'parental level of education', 'math score', 'reading score', 'writing score']]
 y = data['test preparation course']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
@@ -110,13 +110,12 @@ elif option == "Predict":
     gender = st.selectbox("Gender", ["male", "female"])
     race = st.selectbox("Race/Ethnicity", ["group A", "group B", "group C", "group D", "group E"])
     parental_education = st.selectbox("Parental level of education", ["some high school", "high school", "some college", "associate's degree", "bachelor's degree", "master's degree"])
-    lunch = st.selectbox("Type of lunch", ["standard", "free/reduced"])
     math_score = st.slider("Math score", 0, 100, 50)
     reading_score = st.slider("Reading score", 0, 100, 50)
     writing_score = st.slider("Writing score", 0, 100, 50)
 
     if st.button("Predict"):
-        prediction = predict_student(gender, race, parental_education, lunch, math_score, reading_score, writing_score)
+        prediction = predict_student(gender, race, parental_education, math_score, reading_score, writing_score)
         if prediction == 1:
             st.success("The student has completed the test preparation course")
         else:
