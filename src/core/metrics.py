@@ -31,6 +31,7 @@ def get_classification_report(result: TrainingResult) -> pd.DataFrame:
         result.y_pred,
         target_names=[label0, label1],
         output_dict=True,
+        zero_division=0,   # silences precision/F1 warnings on unseen labels
     )
     return pd.DataFrame(report).transpose()
 

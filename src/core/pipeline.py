@@ -67,6 +67,33 @@ def _class_balance(y: pd.Series) -> Tuple[dict, float]:
     return counts, minority / majority
 
 
+def _safe_smote_k(y_train: pd.Series, n_folds: int) -> int:
+    """
+    SMOTE requires k_neighbors < n_samples_minority_in_fold.
+
+    When doing k-fold CV, each training fold has roughly
+    (n_folds-1)/n_folds of the data.  We compute the expected minority
+    count per fold and set k_neighbors safely below that value.
+
+    Default k=5 is used when data is abundant.
+    """
+    minority_train = int(y_train.value_counts().min())
+    # Each CV training fold sees ~(n_folds-1)/n_folds of minority samples
+    minority_per_fold = int(minority_train * (n_folds - 1) / n_folds)
+    # k must be strictly less than minority_per_fold; minimum is 1
+    safe_k = max(1, min(5, minority_per_fold - 1))
+    return safe_k
+
+
+def _safe_cv_folds(y_train: pd.Series, desired_folds: int) -> int:
+    """
+    StratifiedKFold requires at least 2 samples per class per fold.
+    Cap n_splits to the smallest class count in the training set.
+    """
+    min_class = int(y_train.value_counts().min())
+    return max(2, min(desired_folds, min_class))
+
+
 def run_training(dataset_cfg: DatasetConfig,
                  model_cfg: ModelConfig) -> TrainingResult:
     """
@@ -78,6 +105,9 @@ def run_training(dataset_cfg: DatasetConfig,
     SMOTE is placed *inside* the pipeline so it is applied only on the
     training fold during cross-validation, never on the validation fold.
     This prevents data leakage.
+
+    SMOTE k_neighbors and CV folds are computed dynamically so the
+    pipeline works correctly even on small or highly imbalanced datasets.
     """
 
     # ── 1. Load data ──────────────────────────────────────────────────────────
@@ -92,31 +122,35 @@ def run_training(dataset_cfg: DatasetConfig,
         stratify     = y,
     )
 
-    # ── 3. Build pipeline ─────────────────────────────────────────────────────
+    # ── 3. Compute safe SMOTE k and CV folds for this dataset ────────────────
+    n_folds = _safe_cv_folds(y_train, CV_FOLDS)
+    smote_k = _safe_smote_k(y_train, n_folds)
+
+    # ── 4. Build pipeline ─────────────────────────────────────────────────────
     preprocessor = build_preprocessor(dataset_cfg)
     estimator    = model_cfg.build_estimator()
 
     pipeline = ImbPipeline([
         ("preprocessor", preprocessor),
-        ("smote",        SMOTE(random_state=RANDOM_STATE)),
+        ("smote",        SMOTE(k_neighbors=smote_k, random_state=RANDOM_STATE)),
         ("classifier",   estimator),
     ])
 
-    # ── 4. Cross-validation (AUC-ROC) on training set only ───────────────────
-    cv = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True,
+    # ── 5. Cross-validation (AUC-ROC) on training set only ───────────────────
+    cv = StratifiedKFold(n_splits=n_folds, shuffle=True,
                          random_state=RANDOM_STATE)
     cv_scores = cross_val_score(
         pipeline, X_train, y_train, cv=cv, scoring="roc_auc"
     )
 
-    # ── 5. Final fit on full training set ────────────────────────────────────
+    # ── 6. Final fit on full training set ────────────────────────────────────
     pipeline.fit(X_train, y_train)
 
-    # ── 6. Predictions on held-out test set ──────────────────────────────────
+    # ── 7. Predictions on held-out test set ──────────────────────────────────
     y_pred  = pipeline.predict(X_test)
     y_proba = pipeline.predict_proba(X_test)[:, 1]
 
-    # ── 7. Recover feature names from fitted preprocessor ────────────────────
+    # ── 8. Recover feature names from fitted preprocessor ────────────────────
     feature_names = get_feature_names(
         pipeline.named_steps["preprocessor"], dataset_cfg
     )
