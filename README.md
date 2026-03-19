@@ -90,7 +90,7 @@ streamlit run studentsPrediction.py
 
 ---
 
-`https://img.shields.io/badge/Python-3.10-blue`
-`https://img.shields.io/badge/Machine%20Learning-Logistic%20Regression-green`
-`https://img.shields.io/badge/Estado-Activo-success`
-`https://img.shields.io/badge/Licencia-MIT-yellow`
+https://img.shields.io/badge/Python-3.10-blue
+https://img.shields.io/badge/Machine%20Learning-Logistic%20Regression-green
+https://img.shields.io/badge/Estado-Activo-success
+https://img.shields.io/badge/Licencia-MIT-yellow
