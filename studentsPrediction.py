@@ -10,19 +10,19 @@ from imblearn.over_sampling import SMOTE
 
 # Configuración de la página de Streamlit
 st.set_page_config(
-    page_title="Logistic Regression",
+    page_title="Regresión Logística",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # Título de la página
-st.title("Logistic Regression Model for Students Performance")
+st.title("Modelo de Regresión Logística para el Rendimiento Estudiantil")
 
 # Cargar el Dataset
 data = pd.read_csv('StudentsPerformance.csv')
 data = data.drop('lunch', axis=1)  # 🔹 Eliminar lunch
 
-# Codificar numéricamente las columnas object
+# Codificar numéricamente las columnas categóricas
 encoder = OrdinalEncoder()
 columns_to_encode = ['gender', 'race/ethnicity', 'parental level of education']
 encoder.fit(data[columns_to_encode])
@@ -44,6 +44,15 @@ model.fit(X_resampled, y_resampled)
 
 # Predicción
 y_pred = model.predict(X_test)
+
+# Diccionario de mapeo para mostrar etiquetas más claras
+race_mapping = {
+    "group A": "Afrodescendiente",
+    "group B": "Caucásico",
+    "group C": "Hispano",
+    "group D": "Asiático",
+    "group E": "Otro"
+}
 
 # Función para predecir si el estudiante ha completado el curso
 def predict_student(gender, race, parental_education, math_score, reading_score, writing_score):
@@ -68,30 +77,33 @@ def predict_student(gender, race, parental_education, math_score, reading_score,
     return prediction[0]
 
 # Opciones de la interfaz
-option = st.sidebar.selectbox("Select an option", ("Data preview", "Data summary", "Confusion matrix", "Classification Report", "ROC Accuracy", "Predict"))
+option = st.sidebar.selectbox(
+    "Selecciona una opción", 
+    ("Vista previa de datos", "Resumen de datos", "Matriz de confusión", "Reporte de clasificación", "Curva ROC", "Predecir")
+)
 
-if option == "Data preview":
-    st.write("### Data Preview", data.head())
+if option == "Vista previa de datos":
+    st.write("### Vista previa de los datos", data.head())
     
-elif option == "Data summary":
-    st.write("### Data summary", data.describe())
+elif option == "Resumen de datos":
+    st.write("### Resumen estadístico de los datos", data.describe())
 
-elif option == "Confusion matrix":
-    st.header("Confusion matrix")
+elif option == "Matriz de confusión":
+    st.header("Matriz de confusión")
     cm = confusion_matrix(y_test, y_pred)
     fig, ax = plt.subplots()
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
-    ax.set_xlabel('Predicted')
-    ax.set_ylabel('True')
+    ax.set_xlabel('Predicción')
+    ax.set_ylabel('Real')
     st.pyplot(fig)
 
-elif option == "Classification Report":
-    st.header("Classification Report")
+elif option == "Reporte de clasificación":
+    st.header("Reporte de clasificación")
     report = pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose()
     st.dataframe(report)
 
-elif option == "ROC Accuracy":
-    st.header("ROC Accuracy")
+elif option == "Curva ROC":
+    st.header("Curva ROC y AUC")
     y_pred_proba = model.predict_proba(X_test)[:, 1]
     auc = roc_auc_score(y_test, y_pred_proba)
     st.write(f'AUC: {auc}')
@@ -100,25 +112,34 @@ elif option == "ROC Accuracy":
     fig, ax = plt.subplots()
     ax.plot(fpr, tpr, label=f'AUC = {auc:.2f}')
     ax.plot([0, 1], [0, 1], 'k--')
-    ax.set_xlabel('False Positive Rate')
-    ax.set_ylabel('True Positive Rate')
-    ax.set_title('ROC Curve')
+    ax.set_xlabel('Tasa de falsos positivos')
+    ax.set_ylabel('Tasa de verdaderos positivos')
+    ax.set_title('Curva ROC')
     ax.legend(loc='lower right')
     st.pyplot(fig)
 
-elif option == "Predict":
-    st.header("Predict for a student")
+elif option == "Predecir":
+    st.header("Predicción para un estudiante")
 
-    gender = st.selectbox("Gender", ["male", "female"])
-    race = st.selectbox("Race/Ethnicity", ["group A", "group B", "group C", "group D", "group E"])
-    parental_education = st.selectbox("Parental level of education", ["some high school", "high school", "some college", "associate's degree", "bachelor's degree", "master's degree"])
-    math_score = st.slider("Math score", 0, 100, 50)
-    reading_score = st.slider("Reading score", 0, 100, 50)
-    writing_score = st.slider("Writing score", 0, 100, 50)
+    gender = st.selectbox("Sexo", ["male", "female"], format_func=lambda x: "Masculino" if x=="male" else "Femenino")
+    race = st.selectbox("Raza/Etnia", list(race_mapping.keys()), format_func=lambda x: race_mapping[x])
+    parental_education = st.selectbox("Nivel educativo de los padres", [
+        "some high school", "high school", "some college", "associate's degree", "bachelor's degree", "master's degree"
+    ], format_func=lambda x: {
+        "some high school": "Algo de secundaria",
+        "high school": "Secundaria completa",
+        "some college": "Algo de universidad",
+        "associate's degree": "Técnico/Asociado",
+        "bachelor's degree": "Licenciatura",
+        "master's degree": "Maestría"
+    }[x])
+    math_score = st.slider("Nota en Matemáticas", 0, 100, 50)
+    reading_score = st.slider("Nota en Lectura", 0, 100, 50)
+    writing_score = st.slider("Nota en Escritura", 0, 100, 50)
 
-    if st.button("Predict"):
+    if st.button("Predecir"):
         prediction = predict_student(gender, race, parental_education, math_score, reading_score, writing_score)
         if prediction == 1:
-            st.success("The student has completed the test preparation course")
+            st.success("El estudiante ha completado el curso de preparación para exámenes")
         else:
-            st.error("The student has not completed the test preparation course")
+            st.error("El estudiante NO ha completado el curso de preparación para exámenes")
